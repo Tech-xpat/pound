@@ -1,15 +1,18 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
-import { Moon, Sun, Palette, ArrowLeft, Wallet } from "lucide-react"
+import { Moon, Sun, Palette, ArrowLeft, Wallet, User, Lock } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { auth } from "@/lib/firebase"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
@@ -22,14 +25,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { updateUserSettings } from "@/lib/auth"
+import { updateUserSettings, updateUsername, changePassword } from "@/lib/auth"
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { userData } = useAuth()
   const router = useRouter()
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -41,12 +46,25 @@ export default function SettingsPage() {
     },
     dashboardStyle: "modern",
     theme: theme || "light",
-    currency: "NGN", // Default to Naira
+    currency: "NGN",
+  })
+
+  const [profileData, setProfileData] = useState({
+    username: userData?.username || "",
+  })
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   })
 
   useEffect(() => {
     if (userData?.settings) {
       setSettings(userData.settings)
+    }
+    if (userData?.username) {
+      setProfileData({ username: userData.username })
     }
   }, [userData])
 
@@ -58,13 +76,63 @@ export default function SettingsPage() {
     setHasChanges(true)
   }
 
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfileData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+    setHasChanges(true)
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }))
+  }
+
   const saveSettings = async () => {
     setLoading(true)
     try {
       if (!auth.currentUser) throw new Error("No authenticated user")
+
+      // Save settings
       await updateUserSettings(auth.currentUser.uid, settings)
+
+      // Update username if changed
+      if (profileData.username !== userData?.username) {
+        await updateUsername(auth.currentUser.uid, profileData.username)
+      }
+
       setHasChanges(false)
       router.push("/dashboard")
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePasswordSubmit = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords don't match")
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long")
+      return
+    }
+
+    setLoading(true)
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword)
+      setShowPasswordDialog(false)
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
     } catch (error: any) {
       toast.error(error.message)
     } finally {
@@ -90,7 +158,7 @@ export default function SettingsPage() {
             Back to Dashboard
           </Button>
           {hasChanges && (
-            <Button onClick={() => saveSettings()} disabled={loading}>
+            <Button onClick={saveSettings} disabled={loading}>
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           )}
@@ -98,8 +166,89 @@ export default function SettingsPage() {
       </div>
 
       <Card className="p-6 space-y-6">
+        {/* Profile Section */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Currency Preference</h2>
+          <div className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Profile</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                value={profileData.username}
+                onChange={handleProfileChange}
+                placeholder="Enter your username"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Password Change Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Password</h2>
+          </div>
+          <AlertDialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline">Change Password</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Change Password</AlertDialogTitle>
+                <AlertDialogDescription>Enter your current password and choose a new one.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePasswordSubmit} disabled={loading}>
+                  {loading ? "Updating..." : "Update Password"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+
+        {/* Currency Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Currency Preference</h2>
+          </div>
           <RadioGroup
             value={settings.currency}
             onValueChange={(value) => handleSettingChange("currency", value)}
@@ -113,15 +262,16 @@ export default function SettingsPage() {
               </Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="EUR" id="eur" />
-              <Label htmlFor="eur" className="flex items-center gap-2">
+              <RadioGroupItem value="GBP" id="gbp" />
+              <Label htmlFor="gbp" className="flex items-center gap-2">
                 <Wallet className="h-4 w-4" />
-                Euro (€) - Primary
+                Pounds (£) - Primary
               </Label>
             </div>
           </RadioGroup>
         </div>
 
+        {/* Rest of your existing settings sections */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Dashboard Appearance</h2>
           <RadioGroup
