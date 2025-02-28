@@ -5,6 +5,9 @@ import {
   updateProfile,
   setPersistence,
   browserLocalPersistence,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
 } from "firebase/auth"
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { toast } from "sonner"
@@ -12,6 +15,25 @@ import { setCookie } from "cookies-next"
 
 // Set persistence to LOCAL
 setPersistence(auth, browserLocalPersistence)
+
+// Add these new functions for password change
+export async function changePassword(currentPassword: string, newPassword: string) {
+  try {
+    const user = auth.currentUser
+    if (!user || !user.email) throw new Error("No authenticated user")
+
+    // Re-authenticate user before changing password
+    const credential = EmailAuthProvider.credential(user.email, currentPassword)
+    await reauthenticateWithCredential(user, credential)
+
+    // Change password
+    await updatePassword(user, newPassword)
+    toast.success("Password updated successfully")
+  } catch (error: any) {
+    console.error("Change password error:", error)
+    throw new Error(error.message || "Failed to change password")
+  }
+}
 
 export async function signUpWithEmail(email: string, password: string, username: string, couponCode: string) {
   try {
