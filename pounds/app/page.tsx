@@ -31,8 +31,7 @@ export default function Home() {
                 Transform Your Network Into <span className="text-primary">Financial Success</span>
               </h1>
               <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-                Join Pounds Bosses' elite network of agents and unlock unlimited earning potential through our
-                innovative referral system.
+                Join Pounds Bosses' elite network of agents and unlock unlimited earning potential through Surveys and its Introduction to Others.
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Button size="lg" asChild>
