@@ -4,35 +4,7 @@ import { motion } from "framer-motion"
 import { Users, DollarSign, Target, Crown } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
-export function ElegantDashboard({ data }: { data: any }) {
-  return (
-    <div className="p-4 space-y-8">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            title: "Total Referrals",
-            value: data?.referrals || "0",
-            icon: Users,
-            gradient: "from-purple-500 to-pink-500",
-          },
-          {
-            title: "Earnings",
-            value: `$${data?.earnings?.toFixed(2) || "0.00"}`,
-            icon: DollarSign,
-            gradient: "from-blue-500 to-cyan-500",
-          },
-          {
-            title: "Ads Run",
-            value: data?.adsRun || "0",
-            icon: Target,
-            gradient: "from-green-500 to-emerald-500",
-          },
-          {
-            title: "Level",
-            value: data?.level || "Newbie",
-            icon: Crown,
-            gradient: "from-yellow-500 to-orange-500",
-          },
+export function ElegantDashboard // adding details here from modern 
         ].map((item, i) => (
           <motion.div
             key={item.title}
