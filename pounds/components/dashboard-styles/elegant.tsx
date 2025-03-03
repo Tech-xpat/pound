@@ -4,7 +4,60 @@ import { motion } from "framer-motion"
 import { Users, DollarSign, Target, Crown } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
-export function ElegantDashboard // adding details here from modern 
+export function ElegantDashboard({ data }: { data: DashboardData }) {
+  const primaryCurrency = data?.settings?.currency || "NGN"
+  const earnings = data?.earnings || 0
+  const referrals = data?.referrals || 0
+  const level = calculateLevel(referrals)
+
+  const getEarningsDisplay = (amount: number) => {
+    if (primaryCurrency === "NGN") {
+      return {
+        primary: formatCurrency(amount, "NGN"),
+        secondary: formatCurrency(amount, "GBP"),
+      }
+    } else {
+      return {
+        primary: formatCurrency(amount, "GBP"),
+        secondary: formatCurrency(amount, "NGN"),
+      }
+    }
+  }
+
+  const earningsDisplay = getEarningsDisplay(earnings)
+
+  return (
+    <div className="grid gap-4 p-4 md:grid-cols-2">
+      {[
+        {
+          title: "Total Referrals",
+          value: String(referrals),
+          description: "Active referrals",
+          icon: Users,
+          color: "text-blue-500",
+        },
+        {
+          title: "Earnings",
+          value: earningsDisplay.primary,
+          secondaryValue: earningsDisplay.secondary,
+          description: "Total earnings",
+          icon: Wallet,
+          color: "text-green-500",
+        },
+        {
+          title: "Surveys Completed",
+          value: String(data?.adsRun || "0"),
+          description: "Total surveys",
+          icon: Target,
+          color: "text-purple-500",
+        },
+        {
+          title: "Level",
+          value: level.title,
+          description: level.bonus,
+          icon: Crown,
+          color: level.color,
+        },
         ].map((item, i) => (
           <motion.div
             key={item.title}
