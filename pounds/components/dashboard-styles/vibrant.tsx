@@ -4,39 +4,60 @@ import { motion } from "framer-motion"
 import { Users, DollarSign, Target, Crown } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
-export function VibrantDashboard({ data }: { data: any }) {
+export function VibrantDashboard({ data }: { data: DashboardData }) {
+  const primaryCurrency = data?.settings?.currency || "NGN"
+  const earnings = data?.earnings || 0
+  const referrals = data?.referrals || 0
+  const level = calculateLevel(referrals)
+
+  const getEarningsDisplay = (amount: number) => {
+    if (primaryCurrency === "NGN") {
+      return {
+        primary: formatCurrency(amount, "NGN"),
+        secondary: formatCurrency(amount, "GBP"),
+      }
+    } else {
+      return {
+        primary: formatCurrency(amount, "GBP"),
+        secondary: formatCurrency(amount, "NGN"),
+      }
+    }
+  }
+
+  const earningsDisplay = getEarningsDisplay(earnings)
+
   return (
-    <div className="p-4">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            title: "Total Referrals",
-            value: data?.referrals || "0",
-            icon: Users,
-            bg: "bg-pink-500",
-            hover: "hover:bg-pink-600",
-          },
-          {
-            title: "Earnings",
-            value: `$${data?.earnings?.toFixed(2) || "0.00"}`,
-            icon: DollarSign,
-            bg: "bg-purple-500",
-            hover: "hover:bg-purple-600",
-          },
-          {
-            title: "Ads Run",
-            value: data?.adsRun || "0",
-            icon: Target,
-            bg: "bg-blue-500",
-            hover: "hover:bg-blue-600",
-          },
-          {
-            title: "Level",
-            value: data?.level || "Newbie",
-            icon: Crown,
-            bg: "bg-indigo-500",
-            hover: "hover:bg-indigo-600",
-          },
+    <div className="grid gap-4 p-4 md:grid-cols-2">
+      {[
+        {
+          title: "Total Referrals",
+          value: String(referrals),
+          description: "Active referrals",
+          icon: Users,
+          color: "text-blue-500",
+        },
+        {
+          title: "Earnings",
+          value: earningsDisplay.primary,
+          secondaryValue: earningsDisplay.secondary,
+          description: "Total earnings",
+          icon: Wallet,
+          color: "text-green-500",
+        },
+        {
+          title: "Surveys Completed",
+          value: String(data?.adsRun || "0"),
+          description: "Total surveys",
+          icon: Target,
+          color: "text-purple-500",
+        },
+        {
+          title: "Level",
+          value: level.title,
+          description: level.bonus,
+          icon: Crown,
+          color: level.color,
+        },
         ].map((item, i) => (
           <motion.div
             key={item.title}
