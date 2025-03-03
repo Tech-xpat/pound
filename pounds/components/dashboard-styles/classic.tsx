@@ -1,7 +1,17 @@
 "use client"
-
-import { Users, DollarSign, Target, Crown } from "lucide-react"
+import { motion } from "framer-motion"
+import { Users, Wallet, Target, Crown } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { calculateLevel, formatCurrency } from "@/lib/utils"
+
+interface DashboardData {
+  referrals?: number
+  earnings?: number
+  adsRun?: number
+  settings?: {
+    currency: "NGN" | "GBP"
+  }
+}
 
 export function ClassicDashboard({ data }: { data: DashboardData }) {
   const primaryCurrency = data?.settings?.currency || "NGN"
